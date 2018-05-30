@@ -1,0 +1,53 @@
+nextcloud-db:
+  image: "mariadb:latest"
+  container_name: nextcloud_db
+  ports:
+    - 33034:3306
+  volumes:
+    - ./mariadb:/var/lib/mysql
+  environment:
+    - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    - MYSQL_DATABASE=nextcloud
+    - MYSQL_USER=${MYSQL_USER_NAME}
+    - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+nextcloud_web:
+  image: "wonderfall/nextcloud:latest"
+  container_name: nextcloud_web
+  ports:
+    - "8888:8888"
+  environment:
+    - UID=1000
+    - GID=1000
+    - UPLOAD_MAX_SIZE=10G
+    - APC_SHM_SIZE=128M
+    - OPCACHE_MEM_SIZE=128
+    - CRON_PERIOD=15m
+    - TZ=Aisa/Shanghai
+    - ADMIN_USER=${NC_ADMIN}
+    - ADMIN_PASSWORD=${NC_ADMIN_PASSWORD}
+    - DOMAIN=pan.ipeixi.com
+    - DB_TYPE=mysql
+    - DB_NAME=nextcloud
+    - DB_USER=${MYSQL_USER_NAME}
+    - DB_PASSWORD=${MYSQL_PASSWORD}
+    - DB_HOST=nextcloud-db:3306
+  volumes:
+    - ./nextcloud/data:/data
+    - ./nextcloud/config:/config
+    - ./nextcloud/apps:/apps2
+    - ./nextcloud/themes:/nextcloud/themes
+  links:
+    - nextcloud-db
+
+nginx:
+  image: "nginx:alpine"
+  container_name: nginx
+  restart: always
+  ports:
+    - 80:80
+    - 8080:8080
+  volumes: 
+    - ./pan.ipeixi.com.conf:/etc/nginx/conf.d/pan.ipeixi.com.conf
+  links:
+    - nextcloud_web
